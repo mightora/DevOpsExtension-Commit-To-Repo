@@ -48,6 +48,7 @@ $commitMsg = Get-VstsInput -Name 'commitMsg'
 $branchName = Get-VstsInput -Name 'branchName'
 $tags = Get-VstsInput -Name 'tags'
 $targetFolder = Get-VstsInput -Name 'targetFolder'
+$createOrphanBranch = Get-VstsInput -Name 'createOrphanBranch' -AsBool
 
 Write-Output "Commit all changes"
 
@@ -78,15 +79,36 @@ git config user.email "$userEmail"
 Write-Host "Configuring Git user.name with: $userName"
 git config user.name "$userName"
 
-# Checkout the specified branch, create it if it doesn't exist
-git checkout -b $branchName
+# Determine branch creation strategy
+if (![string]::IsNullOrEmpty($targetFolder) -and $createOrphanBranch) {
+    Write-Host "Creating ORPHAN branch '$branchName' - will contain ONLY specified folders with no history"
+    
+    # Create an orphan branch (starts with no files, no history)
+    git checkout --orphan $branchName
+    
+    # Remove all files from staging area
+    Write-Host "Clearing staging area..."
+    git rm -rf --cached . 2>&1 | Out-Null
+    
+} else {
+    Write-Host "Creating/checking out branch '$branchName'"
+    # Checkout the specified branch, create it if it doesn't exist (normal branch)
+    git checkout -b $branchName 2>&1 | Out-Null
+    # If branch already exists, just switch to it
+    if ($LASTEXITCODE -ne 0) {
+        git checkout $branchName
+    }
+}
 
 # Stage changes - either from specific folders or all changes
 if (![string]::IsNullOrEmpty($targetFolder)) {
-    Write-Host "Targeting specific folder(s) for commit - ONLY these folders will be committed"
-    
-    # Reset the staging area to ensure we start clean
-    git reset
+    if ($createOrphanBranch) {
+        Write-Host "Adding ONLY specified folder(s) to orphan branch"
+    } else {
+        Write-Host "Targeting specific folder(s) for commit - ONLY these folders will be committed"
+        # Reset the staging area to ensure we start clean
+        git reset
+    }
     
     # Split by comma to support multiple folders
     $folders = $targetFolder -split ',' | ForEach-Object { $_.Trim() }

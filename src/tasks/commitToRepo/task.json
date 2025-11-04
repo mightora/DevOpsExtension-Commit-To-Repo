@@ -11,7 +11,7 @@
     "version": {
         "Major": 2,
         "Minor": 2,
-        "Patch": 18
+        "Patch": 19
     },
     "groups": [
         {
@@ -60,6 +60,15 @@
             "defaultValue": "",
             "required": false,
             "helpMarkDown": "Specific folder(s) to commit changes from. Supports multiple folders separated by commas (e.g., 'docs, src/app' or '$(Build.SourcesDirectory)/wiki-output, $(Build.SourcesDirectory)/docs'). If empty, all changes will be committed. ONLY specified folders will be committed.",
+            "groupName": "inputGroup"
+        },
+        {
+            "name": "createOrphanBranch",
+            "type": "boolean",
+            "label": "Create Orphan Branch",
+            "defaultValue": "false",
+            "required": false,
+            "helpMarkDown": "If checked, creates an orphan branch (no history) containing ONLY the specified target folders. This is useful when you want a branch with only specific files and no connection to the main repository history. Note: This option only works when 'Target Folder(s)' is specified.",
             "groupName": "inputGroup"
         }
     ],

@@ -45,7 +45,8 @@ This task automates committing changes made during a pipeline run to your Git re
 | `commitMsg` | Yes | - | The commit message for the changes |
 | `branchName` | Yes | `main` | The branch name to commit to |
 | `tags` | No | - | Comma-separated list of tags to add to the commit |
-| `targetFolder` | No | - | Specific folder to commit changes from. If empty, all changes will be committed. Can be relative (e.g., `docs`) or absolute path (e.g., `$(Build.SourcesDirectory)/wiki-output`) |
+| `targetFolder` | No | - | Specific folder(s) to commit changes from. Supports multiple folders separated by commas. Can be relative (e.g., `docs`) or absolute path (e.g., `$(Build.SourcesDirectory)/wiki-output`). If empty, all changes will be committed. |
+| `createOrphanBranch` | No | `false` | If checked, creates an orphan branch (no history) containing ONLY the specified target folders. Useful for creating branches with specific files and no connection to main repository history. Only works when `targetFolder` is specified. |
 
 ### Example Pipeline Usage
 
@@ -76,4 +77,12 @@ This task automates committing changes made during a pipeline run to your Git re
     commitMsg: "Release version 1.0.0"
     branchName: "main"
     tags: "v1.0.0, release"
+
+# Example 5: Create orphan branch with only specific folders (no history)
+- task: mightoraCommitToRepo@2
+  inputs:
+    commitMsg: "Wiki documentation only"
+    branchName: "wiki-only"
+    targetFolder: "wiki-output"
+    createOrphanBranch: true
 ```
