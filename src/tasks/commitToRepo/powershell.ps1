@@ -81,30 +81,65 @@ git config user.name "$userName"
 # Checkout the specified branch, create it if it doesn't exist
 git checkout -b $branchName
 
-# Stage changes - either from specific folder or all changes
+# Stage changes - either from specific folders or all changes
 if (![string]::IsNullOrEmpty($targetFolder)) {
-    # Convert to relative path if absolute path is provided
-    $relativePath = $targetFolder
-    if ([System.IO.Path]::IsPathRooted($targetFolder)) {
-        $currentDir = (Get-Location).Path
-        # Make sure both paths end with a separator for consistent comparison
-        if (-not $currentDir.EndsWith([System.IO.Path]::DirectorySeparatorChar)) {
-            $currentDir += [System.IO.Path]::DirectorySeparatorChar
-        }
-        if ($targetFolder.StartsWith($currentDir)) {
-            # Remove the current directory from the target folder path
-            $relativePath = $targetFolder.Substring($currentDir.Length)
-        } else {
-            # If not under current directory, use as-is (Git will handle it)
-            $relativePath = $targetFolder
+    Write-Host "Targeting specific folder(s) for commit - ONLY these folders will be committed"
+    
+    # Reset the staging area to ensure we start clean
+    git reset
+    
+    # Split by comma to support multiple folders
+    $folders = $targetFolder -split ',' | ForEach-Object { $_.Trim() }
+    
+    # Process each folder
+    foreach ($folder in $folders) {
+        if (![string]::IsNullOrEmpty($folder)) {
+            # Convert to relative path if absolute path is provided
+            $relativePath = $folder
+            if ([System.IO.Path]::IsPathRooted($folder)) {
+                $currentDir = (Get-Location).Path
+                # Make sure both paths end with a separator for consistent comparison
+                if (-not $currentDir.EndsWith([System.IO.Path]::DirectorySeparatorChar)) {
+                    $currentDir += [System.IO.Path]::DirectorySeparatorChar
+                }
+                if ($folder.StartsWith($currentDir)) {
+                    # Remove the current directory from the target folder path
+                    $relativePath = $folder.Substring($currentDir.Length)
+                } else {
+                    # If not under current directory, use as-is (Git will handle it)
+                    $relativePath = $folder
+                }
+            }
+            
+            # Convert backslashes to forward slashes for Git
+            $relativePath = $relativePath -replace '\\', '/'
+            
+            # Remove leading/trailing slashes
+            $relativePath = $relativePath.Trim('/')
+            
+            Write-Host "Staging changes from folder: $relativePath"
+            
+            # Check if folder exists and has changes
+            if (Test-Path $relativePath) {
+                # Add all files in this specific folder (including subdirectories)
+                git add "$relativePath/"
+                Write-Host "  ✓ Staged all changes in $relativePath"
+            } else {
+                Write-Warning "  ⚠ Folder not found: $relativePath"
+            }
         }
     }
     
-    # Convert backslashes to forward slashes for Git
-    $relativePath = $relativePath -replace '\\', '/'
+    # Verify what's staged
+    Write-Host "`n=== Currently staged files (ONLY these will be committed) ==="
+    $stagedFiles = git diff --cached --name-only
+    if ($stagedFiles) {
+        $stagedFiles | ForEach-Object { Write-Host "  $_" }
+    } else {
+        Write-Warning "No files are staged for commit!"
+    }
+    Write-Host "=========================================================`n"
     
-    Write-Host "Staging changes from folder: $relativePath"
-    git add "$relativePath"
 } else {
     Write-Host "Staging all changes"
     git add --all

@@ -11,7 +11,7 @@
     "version": {
         "Major": 2,
         "Minor": 2,
-        "Patch": 16
+        "Patch": 17
     },
     "groups": [
         {
@@ -56,10 +56,10 @@
         {
             "name": "targetFolder",
             "type": "string",
-            "label": "Target Folder",
+            "label": "Target Folder(s)",
             "defaultValue": "",
             "required": false,
-            "helpMarkDown": "Specific folder to commit changes from (e.g., 'src/app' or 'docs'). If empty, all changes will be committed.",
+            "helpMarkDown": "Specific folder(s) to commit changes from. Supports multiple folders separated by commas (e.g., 'docs, src/app' or '$(Build.SourcesDirectory)/wiki-output, $(Build.SourcesDirectory)/docs'). If empty, all changes will be committed. ONLY specified folders will be committed.",
             "groupName": "inputGroup"
         }
     ],
