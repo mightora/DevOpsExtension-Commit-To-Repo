@@ -92,11 +92,14 @@ if (![string]::IsNullOrEmpty($targetFolder) -and $createOrphanBranch) {
     
 } else {
     Write-Host "Creating/checking out branch '$branchName'"
-    # Checkout the specified branch, create it if it doesn't exist (normal branch)
-    git checkout -b $branchName 2>&1 | Out-Null
+    # Try to checkout the specified branch, create it if it doesn't exist (normal branch)
+    $checkoutResult = git checkout -b $branchName 2>&1
     # If branch already exists, just switch to it
     if ($LASTEXITCODE -ne 0) {
-        git checkout $branchName
+        Write-Host "Branch may already exist, switching to it..."
+        git checkout $branchName 2>&1 | Out-Null
+    } else {
+        Write-Host "Created new branch '$branchName'"
     }
 }
 
