@@ -123,22 +123,24 @@ if (![string]::IsNullOrEmpty($targetFolder)) {
             if (Test-Path $relativePath) {
                 # Add all files in this specific folder (including subdirectories)
                 git add "$relativePath/"
-                Write-Host "  ✓ Staged all changes in $relativePath"
+                Write-Host "  [OK] Staged all changes in $relativePath"
             } else {
-                Write-Warning "  ⚠ Folder not found: $relativePath"
+                Write-Warning "  [WARNING] Folder not found: $relativePath"
             }
         }
     }
     
     # Verify what's staged
-    Write-Host "`n=== Currently staged files (ONLY these will be committed) ==="
+    Write-Host ""
+    Write-Host "=== Currently staged files (ONLY these will be committed) ==="
     $stagedFiles = git diff --cached --name-only
     if ($stagedFiles) {
         $stagedFiles | ForEach-Object { Write-Host "  $_" }
     } else {
         Write-Warning "No files are staged for commit!"
     }
-    Write-Host "=========================================================`n"
+    Write-Host "========================================================="
+    Write-Host ""
     
 } else {
     Write-Host "Staging all changes"
@@ -146,7 +148,16 @@ if (![string]::IsNullOrEmpty($targetFolder)) {
 }
 
 # Use the $commitMsg parameter for the commit message
-git commit -m "$commitMsg"
+$commitResult = git commit -m "$commitMsg" 2>&1
+if ($LASTEXITCODE -ne 0) {
+    if ($commitResult -like "*nothing to commit*") {
+        Write-Warning "No changes to commit. Skipping commit and push."
+        exit 0
+    } else {
+        Write-Error "Failed to commit changes: $commitResult"
+        exit 1
+    }
+}
 
 # Add tags if specified
 if (![string]::IsNullOrEmpty($tags)) {
