@@ -1,8 +1,25 @@
 # Commit to Repo Extension
 
 [![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/mightoraio.mightora-commit-to-repo-extension?label=VS%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=mightoraio.mightora-commit-to-repo-extension)
+
 [![Visual Studio Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/mightoraio.mightora-commit-to-repo-extension)](https://marketplace.visualstudio.com/items?itemName=mightoraio.mightora-commit-to-repo-extension)
+
 [![Visual Studio Marketplace Rating](https://img.shields.io/visual-studio-marketplace/r/mightoraio.mightora-commit-to-repo-extension)](https://marketplace.visualstudio.com/items?itemName=mightoraio.mightora-commit-to-repo-extension)
+
+
+
+[![Visual Studio Marketplace](https://img.shields.io/badge/Marketplace-View%20Extension-blue?logo=visual-studio)](https://marketplace.visualstudio.com/items?itemName=mightoraio.mightora-commit-to-repo-extension) 
+
+[![DeepScan grade](https://deepscan.io/api/teams/25106/projects/30573/branches/983373/badge/grade.svg)](https://deepscan.io/dashboard#view=project&tid=25106&pid=30573&bid=983373)
+
+[![vsmarketplace](https://vsmarketplacebadges.dev/version/mightoraio.mightora-commit-to-repo-extension.svg)](https://marketplace.visualstudio.com/items?itemName=mightoraio.mightora-commit-to-repo-extension)  
+
+[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/mightora/mightoraio.mightora-commit-to-repo-extension.svg)](http://isitmaintained.com/project/mightora/mightoraio.mightora-commit-to-repo-extension)  
+
+[![Percentage of issues still open](http://isitmaintained.com/badge/open/mightora/mightoraio.mightora-commit-to-repo-extension.svg)](http://isitmaintained.com/project/mightora/mightoraio.mightora-commit-to-repo-extension) 
+
+![Mightora.io](https://img.shields.io/badge/Mightora-Visit-blue?logo=https://raw.githubusercontent.com/mightora/mightora.io/main/static/favicon-32x32.png&link=https://mightora.io)
+
 
 The Commit to Repo Extension is a streamlined tool designed to automate the process of committing changes made during a pipeline run to your Git repository.
 

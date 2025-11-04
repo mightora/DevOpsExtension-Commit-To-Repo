@@ -2,7 +2,7 @@
     "manifestVersion": 1,
     "id": "mightora-commit-to-repo-extension",
     "name": "Commit to Repo Extension",
-    "version": "2.0.11",
+    "version": "2.0.12",
     "publisher": "mightoraio",
     "galleryFlags": [
         "Public",
@@ -54,9 +54,39 @@
     },
     "badges": [
         {
-            "href": "https://marketplace.visualstudio.com/items?itemName=mightoraio.mightora-power-platform-devOps-extension",
-            "uri": "https://img.shields.io/badge/Marketplace-View%20Extension-blue?logo=visual-studio",
-            "description": "VS Marketplace"
+            "href": "https://marketplace.visualstudio.com/items?itemName=mightoraio.mightora-commit-to-repo-extension",
+            "uri": "https://img.shields.io/visual-studio-marketplace/v/mightoraio.mightora-commit-to-repo-extension?label=VS%20Marketplace",
+            "description": "Visual Studio Marketplace Version"
+        },
+        {
+            "href": "https://marketplace.visualstudio.com/items?itemName=mightoraio.mightora-commit-to-repo-extension",
+            "uri": "https://img.shields.io/visual-studio-marketplace/i/mightoraio.mightora-commit-to-repo-extension",
+            "description": "Visual Studio Marketplace Installs"
+        },
+        {
+            "href": "https://marketplace.visualstudio.com/items?itemName=mightoraio.mightora-commit-to-repo-extension",
+            "uri": "https://img.shields.io/visual-studio-marketplace/r/mightoraio.mightora-commit-to-repo-extension",
+            "description": "Visual Studio Marketplace Rating"
+        },
+        {
+            "href": "https://deepscan.io/dashboard#view=project&tid=25106&pid=30573&bid=983373",
+            "uri": "https://deepscan.io/api/teams/25106/projects/30573/branches/983373/badge/grade.svg",
+            "description": "DeepScan Grade"
+        },
+        {
+            "href": "https://marketplace.visualstudio.com/items?itemName=mightoraio.mightora-commit-to-repo-extension",
+            "uri": "https://vsmarketplacebadges.dev/version/mightoraio.mightora-commit-to-repo-extension.svg",
+            "description": "VS Marketplace Version"
+        },
+        {
+            "href": "http://isitmaintained.com/project/mightora/mightoraio.mightora-commit-to-repo-extension",
+            "uri": "http://isitmaintained.com/badge/resolution/mightora/mightoraio.mightora-commit-to-repo-extension.svg",
+            "description": "Average time to resolve an issue"
+        },
+        {
+            "href": "http://isitmaintained.com/project/mightora/mightoraio.mightora-commit-to-repo-extension",
+            "uri": "http://isitmaintained.com/badge/open/mightora/mightoraio.mightora-commit-to-repo-extension.svg",
+            "description": "Percentage of issues still open"
         }
     ],
     "files": [

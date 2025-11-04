@@ -86,8 +86,18 @@ if (![string]::IsNullOrEmpty($targetFolder)) {
     # Convert to relative path if absolute path is provided
     $relativePath = $targetFolder
     if ([System.IO.Path]::IsPathRooted($targetFolder)) {
-        $currentDir = Get-Location
-        $relativePath = [System.IO.Path]::GetRelativePath($currentDir, $targetFolder)
+        $currentDir = (Get-Location).Path
+        # Make sure both paths end with a separator for consistent comparison
+        if (-not $currentDir.EndsWith([System.IO.Path]::DirectorySeparatorChar)) {
+            $currentDir += [System.IO.Path]::DirectorySeparatorChar
+        }
+        if ($targetFolder.StartsWith($currentDir)) {
+            # Remove the current directory from the target folder path
+            $relativePath = $targetFolder.Substring($currentDir.Length)
+        } else {
+            # If not under current directory, use as-is (Git will handle it)
+            $relativePath = $targetFolder
+        }
     }
     
     # Convert backslashes to forward slashes for Git
