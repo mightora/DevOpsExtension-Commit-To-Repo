@@ -23,6 +23,7 @@ This task automates committing changes made during a pipeline run to your Git re
 
 ### Key Features
 - **Automated Git Commits**: Stages and commits all modifications to the Git repository.
+- **Selective Folder Commits**: Optionally target specific folders for commits, or commit all changes.
 - **Secure Authentication**: Uses the pipeline's `System.AccessToken` for authentication.
 - **Customizable Commit Message**: Specify a commit message via the task's input parameters.
 - **Flexible Configuration**: Set up Git configurations like user email and name.
@@ -36,7 +37,14 @@ This task automates committing changes made during a pipeline run to your Git re
 ### Example Pipeline Usage
 
 ```yaml
+# Commit all changes
 - task: commitToRepo@1
   inputs:
     commitMsg: "Automated commit from pipeline"
+
+# Commit changes from specific folder only
+- task: commitToRepo@1
+  inputs:
+    commitMsg: "Updated documentation"
+    targetFolder: "docs"
 ```

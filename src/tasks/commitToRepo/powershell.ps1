@@ -40,11 +40,14 @@ Write-Host "Contributors:"
 #Write-Host " - Developer A (Contributions: Improved Git configuration handling)"
 #Write-Host " - Developer B (Contributions: Added support for custom commit messages)"
 Write-Host "==========================================================="
+Write-Host "Please tell us what you think of this task: https://go.iantweedie.biz/mightoria-testimonials"
+Write-Host "==========================================================="
 
 # Get inputs from the task
 $commitMsg = Get-VstsInput -Name 'commitMsg'
 $branchName = Get-VstsInput -Name 'branchName'
 $tags = Get-VstsInput -Name 'tags'
+$targetFolder = Get-VstsInput -Name 'targetFolder'
 
 Write-Output "Commit all changes"
 
@@ -78,8 +81,14 @@ git config user.name "$userName"
 # Checkout the specified branch, create it if it doesn't exist
 git checkout -b $branchName
 
-# Stage all changes
-git add --all
+# Stage changes - either from specific folder or all changes
+if (![string]::IsNullOrEmpty($targetFolder)) {
+    Write-Host "Staging changes from folder: $targetFolder"
+    git add "$targetFolder"
+} else {
+    Write-Host "Staging all changes"
+    git add --all
+}
 
 # Use the $commitMsg parameter for the commit message
 git commit -m "$commitMsg"

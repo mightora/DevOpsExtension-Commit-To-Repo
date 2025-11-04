@@ -11,7 +11,7 @@
     "version": {
         "Major": 2,
         "Minor": 2,
-        "Patch": 13
+        "Patch": 14
     },
     "groups": [
         {
@@ -51,6 +51,15 @@
             "defaultValue": "",
             "required": false,
             "helpMarkDown": "Comma-separated list of tags to add to the commit",
+            "groupName": "inputGroup"
+        },
+        {
+            "name": "targetFolder",
+            "type": "string",
+            "label": "Target Folder",
+            "defaultValue": "",
+            "required": false,
+            "helpMarkDown": "Specific folder to commit changes from (e.g., 'src/app' or 'docs'). If empty, all changes will be committed.",
             "groupName": "inputGroup"
         }
     ],
