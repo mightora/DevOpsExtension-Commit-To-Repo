@@ -83,8 +83,18 @@ git checkout -b $branchName
 
 # Stage changes - either from specific folder or all changes
 if (![string]::IsNullOrEmpty($targetFolder)) {
-    Write-Host "Staging changes from folder: $targetFolder"
-    git add "$targetFolder"
+    # Convert to relative path if absolute path is provided
+    $relativePath = $targetFolder
+    if ([System.IO.Path]::IsPathRooted($targetFolder)) {
+        $currentDir = Get-Location
+        $relativePath = [System.IO.Path]::GetRelativePath($currentDir, $targetFolder)
+    }
+    
+    # Convert backslashes to forward slashes for Git
+    $relativePath = $relativePath -replace '\\', '/'
+    
+    Write-Host "Staging changes from folder: $relativePath"
+    git add "$relativePath"
 } else {
     Write-Host "Staging all changes"
     git add --all
