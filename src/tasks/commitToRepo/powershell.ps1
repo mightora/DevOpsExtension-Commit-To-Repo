@@ -49,6 +49,7 @@ $branchName = Get-VstsInput -Name 'branchName'
 $tags = Get-VstsInput -Name 'tags'
 $targetFolder = Get-VstsInput -Name 'targetFolder'
 $createOrphanBranch = Get-VstsInput -Name 'createOrphanBranch' -AsBool
+$pushStrategy = Get-VstsInput -Name 'pushStrategy'
 
 Write-Output "Commit all changes"
 
@@ -194,10 +195,33 @@ if (![string]::IsNullOrEmpty($tags)) {
 
 Write-Output "Push code to repo"
 
-# Push changes with authentication using System.AccessToken
-git -c http.extraheader="AUTHORIZATION: bearer $env:SYSTEM_ACCESSTOKEN" push origin $branchName
+# Push changes based on selected strategy
+Write-Host "Using push strategy: $pushStrategy"
+
+switch ($pushStrategy) {
+    "force" {
+        Write-Host "⚠️ Force pushing to remote (will overwrite any remote changes)"
+        git -c http.extraheader="AUTHORIZATION: bearer $env:SYSTEM_ACCESSTOKEN" push origin $branchName --force
+    }
+    "deleteAndRecreate" {
+        Write-Host "Deleting remote branch '$branchName' (if exists)..."
+        git push origin --delete $branchName 2>&1 | Out-Null
+        Write-Host "Pushing new branch '$branchName' to remote..."
+        git -c http.extraheader="AUTHORIZATION: bearer $env:SYSTEM_ACCESSTOKEN" push origin $branchName
+    }
+    default {
+        Write-Host "Performing normal push to remote..."
+        git -c http.extraheader="AUTHORIZATION: bearer $env:SYSTEM_ACCESSTOKEN" push origin $branchName
+    }
+}
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Failed to push to remote repository"
+    exit 1
+}
 
 # Push tags if specified
 if (![string]::IsNullOrEmpty($tags)) {
+    Write-Host "Pushing tags to remote..."
     git -c http.extraheader="AUTHORIZATION: bearer $env:SYSTEM_ACCESSTOKEN" push origin --tags
 }

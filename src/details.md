@@ -47,6 +47,7 @@ This task automates committing changes made during a pipeline run to your Git re
 | `tags` | No | - | Comma-separated list of tags to add to the commit |
 | `targetFolder` | No | - | Specific folder(s) to commit changes from. Supports multiple folders separated by commas. Can be relative (e.g., `docs`) or absolute path (e.g., `$(Build.SourcesDirectory)/wiki-output`). If empty, all changes will be committed. |
 | `createOrphanBranch` | No | `false` | If checked, creates an orphan branch (no history) containing ONLY the specified target folders. Useful for creating branches with specific files and no connection to main repository history. Only works when `targetFolder` is specified. |
+| `pushStrategy` | Yes | `normal` | Choose how to push: **Normal** (standard push), **Force Push** (overwrites remote), or **Delete and Recreate** (deletes then recreates remote branch). |
 
 ### Example Pipeline Usage
 
@@ -85,4 +86,23 @@ This task automates committing changes made during a pipeline run to your Git re
     branchName: "wiki-only"
     targetFolder: "wiki-output"
     createOrphanBranch: true
+    pushStrategy: "normal"
+
+# Example 6: Force push to overwrite remote branch
+- task: mightoraCommitToRepo@2
+  inputs:
+    commitMsg: "Updated wiki content"
+    branchName: "wiki-output"
+    targetFolder: "$(Build.SourcesDirectory)/wiki-output"
+    createOrphanBranch: true
+    pushStrategy: "force"
+
+# Example 7: Delete and recreate branch (clean slate)
+- task: mightoraCommitToRepo@2
+  inputs:
+    commitMsg: "Fresh wiki branch"
+    branchName: "word-output"
+    targetFolder: "wiki-output, docs"
+    createOrphanBranch: true
+    pushStrategy: "deleteAndRecreate"
 ```

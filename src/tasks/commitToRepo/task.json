@@ -11,7 +11,7 @@
     "version": {
         "Major": 2,
         "Minor": 2,
-        "Patch": 20
+        "Patch": 21
     },
     "groups": [
         {
@@ -70,6 +70,20 @@
             "required": false,
             "helpMarkDown": "If checked, creates an orphan branch (no history) containing ONLY the specified target folders. This is useful when you want a branch with only specific files and no connection to the main repository history. Note: This option only works when 'Target Folder(s)' is specified.",
             "groupName": "inputGroup"
+        },
+        {
+            "name": "pushStrategy",
+            "type": "pickList",
+            "label": "Push Strategy",
+            "defaultValue": "normal",
+            "required": true,
+            "helpMarkDown": "Choose how to handle the push to remote branch. **Normal**: Standard push (fails if remote has changes). **Force Push**: Overwrites remote branch completely. **Delete and Recreate**: Deletes remote branch first, then pushes (useful for orphan branches).",
+            "groupName": "inputGroup",
+            "options": {
+                "normal": "Normal Push",
+                "force": "Force Push (Overwrite Remote)",
+                "deleteAndRecreate": "Delete and Recreate Branch"
+            }
         }
     ],
     "execution": {

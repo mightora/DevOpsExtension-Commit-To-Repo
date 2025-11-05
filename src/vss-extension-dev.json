@@ -2,7 +2,7 @@
     "manifestVersion": 1,
     "id": "mightora-commit-to-repo-extension-dev",
     "name": "DEV - Commit to Repo Extension",
-    "version": "1.0.85",
+    "version": "1.0.86",
     "publisher": "mightoraio",
     "targets": [
         {
