@@ -92,15 +92,24 @@ if (![string]::IsNullOrEmpty($targetFolder) -and $createOrphanBranch) {
     git rm -rf --cached . 2>&1 | Out-Null
     
 } else {
-    Write-Host "Creating/checking out branch '$branchName'"
-    # Try to checkout the specified branch, create it if it doesn't exist (normal branch)
-    $checkoutResult = git checkout -b $branchName 2>&1
-    # If branch already exists, just switch to it
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Branch may already exist, switching to it..."
-        git checkout $branchName 2>&1 | Out-Null
+    # Get current branch
+    $currentBranch = git rev-parse --abbrev-ref HEAD 2>&1
+
+
+    # This will check to see if we are already on the desired branch
+    if ($currentBranch -eq $branchName) {
+        Write-Host "Already on branch '$branchName'"
     } else {
-        Write-Host "Created new branch '$branchName'"
+        # Try to checkout the specified branch
+        $checkoutResult = git checkout $branchName 2>&1
+        
+        # If branch doesn't exist, create it
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Branch doesn't exist, creating new branch '$branchName'"
+            git checkout -b $branchName 2>&1 | Out-Null
+        } else {
+            Write-Host "Switched to existing branch '$branchName'"
+        }
     }
 }
 
