@@ -98,6 +98,9 @@ git config user.name "$userName"
 if (![string]::IsNullOrEmpty($targetFolder) -and $createOrphanBranch) {
     # === ORPHAN BRANCH MODE ===
     # Creates a branch with no parent commits - useful for gh-pages or clean documentation branches
+    Write-Host "========================================="
+    Write-Host "BRANCH STRATEGY: ORPHAN BRANCH MODE"
+    Write-Host "========================================="
     Write-Host "Creating ORPHAN branch '$branchName' - will contain ONLY specified folders with no history"
     
     # Create an orphan branch (starts with empty history)
@@ -111,14 +114,20 @@ if (![string]::IsNullOrEmpty($targetFolder) -and $createOrphanBranch) {
     # === SIMPLE MODE (NORMAL OPERATIONS) ===
     # Most common use case: just checkout/create a branch and commit all changes
     # This matches the behavior of the original simple script
-    Write-Host "Checking out branch '$branchName'"
+    Write-Host "========================================="
+    Write-Host "BRANCH STRATEGY: SIMPLE MODE"
+    Write-Host "========================================="
+    Write-Host "Checking out branch '$branchName' (simple checkout)"
     git checkout -b $branchName 2>&1 | Out-Null
     
 } else {
     # === ADVANCED MODE ===
     # Used when force pushing, deleting/recreating branches, or working with specific target folders
     # Requires careful branch management to avoid conflicts
-    Write-Host "Creating/checking out branch '$branchName'"
+    Write-Host "========================================="
+    Write-Host "BRANCH STRATEGY: ADVANCED MODE"
+    Write-Host "========================================="
+    Write-Host "Creating/checking out branch '$branchName' (advanced mode with branch detection)"
     
     # Get current branch name (returns "HEAD" if in detached HEAD state, common in pipelines)
     $currentBranch = git rev-parse --abbrev-ref HEAD 2>&1
@@ -138,16 +147,16 @@ if (![string]::IsNullOrEmpty($targetFolder) -and $createOrphanBranch) {
         
         if ($localBranchExists) {
             # Branch exists locally, just switch to it
-            Write-Host "Switching to existing local branch '$branchName'"
+            Write-Host "  → Route: Switching to existing local branch '$branchName'"
             git checkout $branchName 2>&1 | Out-Null
         } elseif ($remoteBranchExists) {
             # Branch exists on remote but not locally (common in Azure DevOps pipelines)
             # Create a local tracking branch from the remote branch
-            Write-Host "Branch exists on remote, creating local tracking branch '$branchName'"
+            Write-Host "  → Route: Branch exists on remote, creating local tracking branch '$branchName'"
             git checkout -b $branchName origin/$branchName 2>&1 | Out-Null
         } else {
             # Branch doesn't exist anywhere, create it from current HEAD
-            Write-Host "Creating new branch '$branchName'"
+            Write-Host "  → Route: Creating new branch '$branchName' (doesn't exist locally or remotely)"
             git checkout -b $branchName 2>&1 | Out-Null
         }
     }
@@ -161,6 +170,10 @@ if (![string]::IsNullOrEmpty($targetFolder) -and $createOrphanBranch) {
 if (![string]::IsNullOrEmpty($targetFolder)) {
     # === FOLDER-SPECIFIC MODE ===
     # Only commit changes from specified folder(s) - useful for monorepos or selective deployments
+    Write-Host ""
+    Write-Host "========================================="
+    Write-Host "STAGING STRATEGY: TARGET FOLDERS"
+    Write-Host "========================================="
     
     if ($createOrphanBranch) {
         Write-Host "Adding ONLY specified folder(s) to orphan branch"
@@ -230,7 +243,11 @@ if (![string]::IsNullOrEmpty($targetFolder)) {
 } else {
     # === STAGE ALL MODE ===
     # Most common use case: commit all changes in the repository
-    Write-Host "Staging all changes"
+    Write-Host ""
+    Write-Host "========================================="
+    Write-Host "STAGING STRATEGY: ALL CHANGES"
+    Write-Host "========================================="
+    Write-Host "Staging all changes in repository"
     git add --all
 }
 
@@ -275,18 +292,23 @@ Write-Output "Push code to repo"
 # - force: Overwrites remote branch completely (⚠️ DESTRUCTIVE)
 # - deleteAndRecreate: Deletes remote branch first, then pushes (useful for clean history)
 
-Write-Host "Using push strategy: $pushStrategy"
+Write-Host ""
+Write-Host "========================================="
+Write-Host "PUSH STRATEGY: $($pushStrategy.ToUpper())"
+Write-Host "========================================="
 
 switch ($pushStrategy) {
     "force" {
         # Force push - overwrites any remote changes
         # ⚠️ WARNING: This can cause data loss for other developers!
-        Write-Host "⚠️ Force pushing to remote (will overwrite any remote changes)"
+        Write-Host "  → Route: FORCE PUSH (will overwrite any remote changes)"
+        Write-Host "  ⚠️ WARNING: This is a destructive operation!"
         git -c http.extraheader="AUTHORIZATION: bearer $env:SYSTEM_ACCESSTOKEN" push origin $branchName --force
     }
     "deleteAndRecreate" {
         # Delete the remote branch first, then push as new
         # This ensures a completely clean branch on remote
+        Write-Host "  → Route: DELETE AND RECREATE"
         Write-Host "Deleting remote branch '$branchName' (if exists)..."
         git push origin --delete $branchName 2>&1 | Out-Null
         Write-Host "Pushing new branch '$branchName' to remote..."
@@ -294,7 +316,7 @@ switch ($pushStrategy) {
     }
     default {
         # Normal push - will fail if remote has changes you don't have locally
-        Write-Host "Performing normal push to remote..."
+        Write-Host "  → Route: NORMAL PUSH"
         git -c http.extraheader="AUTHORIZATION: bearer $env:SYSTEM_ACCESSTOKEN" push origin $branchName
     }
 }
