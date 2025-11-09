@@ -2,7 +2,7 @@
     "manifestVersion": 1,
     "id": "mightora-commit-to-repo-extension",
     "name": "Commit to Repo Extension",
-    "version": "2.0.20",
+    "version": "2.0.21",
     "publisher": "mightoraio",
     "galleryFlags": [
         "Public",
