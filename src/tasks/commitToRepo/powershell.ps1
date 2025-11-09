@@ -43,75 +43,96 @@ Write-Host "==========================================================="
 Write-Host "Please tell us what you think of this task: https://go.iantweedie.biz/mightoria-testimonials"
 Write-Host "==========================================================="
 
-# Get inputs from the task
-$commitMsg = Get-VstsInput -Name 'commitMsg'
-$branchName = Get-VstsInput -Name 'branchName'
-$tags = Get-VstsInput -Name 'tags'
-$targetFolder = Get-VstsInput -Name 'targetFolder'
-$createOrphanBranch = Get-VstsInput -Name 'createOrphanBranch' -AsBool
-$pushStrategy = Get-VstsInput -Name 'pushStrategy'
+# ============================================================
+# STEP 1: Get inputs from the Azure DevOps task configuration
+# ============================================================
+$commitMsg = Get-VstsInput -Name 'commitMsg'              # The commit message text
+$branchName = Get-VstsInput -Name 'branchName'            # Target branch name
+$tags = Get-VstsInput -Name 'tags'                        # Optional: comma-separated Git tags
+$targetFolder = Get-VstsInput -Name 'targetFolder'        # Optional: specific folder(s) to commit
+$createOrphanBranch = Get-VstsInput -Name 'createOrphanBranch' -AsBool  # Create branch with no history
+$pushStrategy = Get-VstsInput -Name 'pushStrategy'        # Push strategy: normal, force, or deleteAndRecreate
 
 Write-Output "Commit all changes"
 
 Write-Output "Working Directory: $(Get-Location)"
 
+# Navigate to the repository root directory
 cd $env:Build_SourcesDirectory
 
 Write-Output "Working Directory Updated to: $(Get-Location)"
 
-# Accessing pipeline variables
-$userEmail = $env:BUILD_REQUESTEDFOREMAIL
-$userName = $env:BUILD_REQUESTEDFOR
-$accessToken = $env:SYSTEM_ACCESSTOKEN
+# ============================================================
+# STEP 2: Configure Git user identity from pipeline variables
+# ============================================================
+# Pull user information from Azure DevOps pipeline variables
+$userEmail = $env:BUILD_REQUESTEDFOREMAIL  # Email of user who triggered the pipeline
+$userName = $env:BUILD_REQUESTEDFOR        # Display name of user who triggered the pipeline
+$accessToken = $env:SYSTEM_ACCESSTOKEN     # Pipeline authentication token for Git operations
 
-# Check if $userEmail is null or empty, and assign a default value if it is
+# Provide fallback values if pipeline variables are not available
+# (This can happen in certain pipeline configurations)
 if ([string]::IsNullOrEmpty($userEmail)) {
     $userEmail = "no.email.in.pipeline.variables@mightora.io"
 }
 
-# Check if $userName is null or empty, and assign a default value if it is
 if ([string]::IsNullOrEmpty($userName)) {
     $userName = "No name in pipeline variables"
 }
 
+# Configure Git with user identity (required for commits)
 Write-Host "Configuring Git user.email with: $userEmail"
 git config user.email "$userEmail"
 
 Write-Host "Configuring Git user.name with: $userName"
 git config user.name "$userName"
 
-# Determine branch creation strategy
+# ============================================================
+# STEP 3: Checkout or create the target branch
+# ============================================================
+# Three different branch strategies are supported:
+# 1. Orphan branch (new branch with no history) - for publishing specific folders only
+# 2. Simple checkout (normal operations) - straightforward branch creation
+# 3. Advanced checkout (force/delete strategies or target folders) - handles complex scenarios
+
 if (![string]::IsNullOrEmpty($targetFolder) -and $createOrphanBranch) {
+    # === ORPHAN BRANCH MODE ===
+    # Creates a branch with no parent commits - useful for gh-pages or clean documentation branches
     Write-Host "Creating ORPHAN branch '$branchName' - will contain ONLY specified folders with no history"
     
-    # Create an orphan branch (starts with no files, no history)
+    # Create an orphan branch (starts with empty history)
     git checkout --orphan $branchName
     
-    # Remove all files from staging area
+    # Remove all files from staging area (start with a clean slate)
     Write-Host "Clearing staging area..."
     git rm -rf --cached . 2>&1 | Out-Null
     
 } elseif ([string]::IsNullOrEmpty($targetFolder) -and ($pushStrategy -eq "normal" -or [string]::IsNullOrEmpty($pushStrategy))) {
-    # Simple path for normal operations - just like the original script
+    # === SIMPLE MODE (NORMAL OPERATIONS) ===
+    # Most common use case: just checkout/create a branch and commit all changes
+    # This matches the behavior of the original simple script
     Write-Host "Checking out branch '$branchName'"
     git checkout -b $branchName 2>&1 | Out-Null
     
 } else {
-    # Advanced path for force push, deleteAndRecreate, or when using targetFolder
+    # === ADVANCED MODE ===
+    # Used when force pushing, deleting/recreating branches, or working with specific target folders
+    # Requires careful branch management to avoid conflicts
     Write-Host "Creating/checking out branch '$branchName'"
     
-    # Get current branch (might be HEAD if detached)
+    # Get current branch name (returns "HEAD" if in detached HEAD state, common in pipelines)
     $currentBranch = git rev-parse --abbrev-ref HEAD 2>&1
     
-    # Check if we're already on the desired branch
+    # Optimization: Skip checkout if we're already on the target branch
     if ($currentBranch -eq $branchName) {
         Write-Host "Already on branch '$branchName'"
     } else {
-        # Check if branch exists locally (suppress error output)
+        # Check if branch exists locally (suppress error output to avoid confusing messages)
         git rev-parse --verify $branchName 2>&1 | Out-Null
         $localBranchExists = ($LASTEXITCODE -eq 0)
         
-        # Check if branch exists on remote (check if output is not empty)
+        # Check if branch exists on remote origin
+        # ls-remote returns data if branch exists, empty if it doesn't
         $remoteBranchCheck = git ls-remote --heads origin $branchName 2>&1
         $remoteBranchExists = ![string]::IsNullOrEmpty($remoteBranchCheck)
         
@@ -120,43 +141,53 @@ if (![string]::IsNullOrEmpty($targetFolder) -and $createOrphanBranch) {
             Write-Host "Switching to existing local branch '$branchName'"
             git checkout $branchName 2>&1 | Out-Null
         } elseif ($remoteBranchExists) {
-            # Branch exists on remote but not locally, create tracking branch
+            # Branch exists on remote but not locally (common in Azure DevOps pipelines)
+            # Create a local tracking branch from the remote branch
             Write-Host "Branch exists on remote, creating local tracking branch '$branchName'"
             git checkout -b $branchName origin/$branchName 2>&1 | Out-Null
         } else {
-            # Branch doesn't exist anywhere, create new branch
+            # Branch doesn't exist anywhere, create it from current HEAD
             Write-Host "Creating new branch '$branchName'"
             git checkout -b $branchName 2>&1 | Out-Null
         }
     }
 }
 
-# Stage changes - either from specific folders or all changes
+# ============================================================
+# STEP 4: Stage changes for commit
+# ============================================================
+# Two modes: stage specific folders only, or stage all changes
+
 if (![string]::IsNullOrEmpty($targetFolder)) {
+    # === FOLDER-SPECIFIC MODE ===
+    # Only commit changes from specified folder(s) - useful for monorepos or selective deployments
+    
     if ($createOrphanBranch) {
         Write-Host "Adding ONLY specified folder(s) to orphan branch"
     } else {
         Write-Host "Targeting specific folder(s) for commit - ONLY these folders will be committed"
-        # Reset the staging area to ensure we start clean
+        # Reset the staging area to ensure we start clean (clear any previously staged files)
         git reset
     }
     
-    # Split by comma to support multiple folders
+    # Split by comma to support multiple folders (e.g., "docs,src/app")
     $folders = $targetFolder -split ',' | ForEach-Object { $_.Trim() }
     
-    # Process each folder
+    # Process each folder individually
     foreach ($folder in $folders) {
         if (![string]::IsNullOrEmpty($folder)) {
-            # Convert to relative path if absolute path is provided
+            # === PATH NORMALIZATION ===
+            # Convert absolute paths to relative paths for Git compatibility
             $relativePath = $folder
             if ([System.IO.Path]::IsPathRooted($folder)) {
+                # Folder is an absolute path (e.g., D:\a\1\s\docs)
                 $currentDir = (Get-Location).Path
                 # Make sure both paths end with a separator for consistent comparison
                 if (-not $currentDir.EndsWith([System.IO.Path]::DirectorySeparatorChar)) {
                     $currentDir += [System.IO.Path]::DirectorySeparatorChar
                 }
                 if ($folder.StartsWith($currentDir)) {
-                    # Remove the current directory from the target folder path
+                    # Remove the current directory from the target folder path to make it relative
                     $relativePath = $folder.Substring($currentDir.Length)
                 } else {
                     # If not under current directory, use as-is (Git will handle it)
@@ -164,17 +195,17 @@ if (![string]::IsNullOrEmpty($targetFolder)) {
                 }
             }
             
-            # Convert backslashes to forward slashes for Git
+            # Convert Windows backslashes to Git-compatible forward slashes
             $relativePath = $relativePath -replace '\\', '/'
             
-            # Remove leading/trailing slashes
+            # Remove leading/trailing slashes for clean path
             $relativePath = $relativePath.Trim('/')
             
             Write-Host "Staging changes from folder: $relativePath"
             
-            # Check if folder exists and has changes
+            # Verify folder exists before attempting to stage
             if (Test-Path $relativePath) {
-                # Add all files in this specific folder (including subdirectories)
+                # Stage all files in this specific folder (including subdirectories)
                 git add "$relativePath/"
                 Write-Host "  [OK] Staged all changes in $relativePath"
             } else {
@@ -183,7 +214,8 @@ if (![string]::IsNullOrEmpty($targetFolder)) {
         }
     }
     
-    # Verify what's staged
+    # === STAGING VERIFICATION ===
+    # Display what files are staged to provide visibility before commit
     Write-Host ""
     Write-Host "=== Currently staged files (ONLY these will be committed) ==="
     $stagedFiles = git diff --cached --name-only
@@ -196,24 +228,37 @@ if (![string]::IsNullOrEmpty($targetFolder)) {
     Write-Host ""
     
 } else {
+    # === STAGE ALL MODE ===
+    # Most common use case: commit all changes in the repository
     Write-Host "Staging all changes"
     git add --all
 }
 
-# Use the $commitMsg parameter for the commit message
+# ============================================================
+# STEP 5: Create the Git commit
+# ============================================================
+# Commit staged changes with the provided commit message
 $commitResult = git commit -m "$commitMsg" 2>&1
+
+# Check if commit was successful
 if ($LASTEXITCODE -ne 0) {
     if ($commitResult -like "*nothing to commit*") {
+        # No changes detected - exit gracefully without error
         Write-Warning "No changes to commit. Skipping commit and push."
         exit 0
     } else {
+        # Commit failed for another reason - exit with error
         Write-Error "Failed to commit changes: $commitResult"
         exit 1
     }
 }
 
-# Add tags if specified
+# ============================================================
+# STEP 6: Apply Git tags (optional)
+# ============================================================
+# Tags are useful for marking releases or important commits
 if (![string]::IsNullOrEmpty($tags)) {
+    # Support multiple tags separated by commas (e.g., "v1.0.0,release")
     $tagsArray = $tags -split ","
     foreach ($tag in $tagsArray) {
         git tag $tag.Trim()
@@ -222,32 +267,48 @@ if (![string]::IsNullOrEmpty($tags)) {
 
 Write-Output "Push code to repo"
 
-# Push changes based on selected strategy
+# ============================================================
+# STEP 7: Push changes to remote repository
+# ============================================================
+# Three push strategies available:
+# - normal: Standard push (fails if remote has changes you don't have)
+# - force: Overwrites remote branch completely (⚠️ DESTRUCTIVE)
+# - deleteAndRecreate: Deletes remote branch first, then pushes (useful for clean history)
+
 Write-Host "Using push strategy: $pushStrategy"
 
 switch ($pushStrategy) {
     "force" {
+        # Force push - overwrites any remote changes
+        # ⚠️ WARNING: This can cause data loss for other developers!
         Write-Host "⚠️ Force pushing to remote (will overwrite any remote changes)"
         git -c http.extraheader="AUTHORIZATION: bearer $env:SYSTEM_ACCESSTOKEN" push origin $branchName --force
     }
     "deleteAndRecreate" {
+        # Delete the remote branch first, then push as new
+        # This ensures a completely clean branch on remote
         Write-Host "Deleting remote branch '$branchName' (if exists)..."
         git push origin --delete $branchName 2>&1 | Out-Null
         Write-Host "Pushing new branch '$branchName' to remote..."
         git -c http.extraheader="AUTHORIZATION: bearer $env:SYSTEM_ACCESSTOKEN" push origin $branchName
     }
     default {
+        # Normal push - will fail if remote has changes you don't have locally
         Write-Host "Performing normal push to remote..."
         git -c http.extraheader="AUTHORIZATION: bearer $env:SYSTEM_ACCESSTOKEN" push origin $branchName
     }
 }
 
+# Verify push was successful
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Failed to push to remote repository"
     exit 1
 }
 
-# Push tags if specified
+# ============================================================
+# STEP 8: Push Git tags (optional)
+# ============================================================
+# Tags need to be pushed separately from commits
 if (![string]::IsNullOrEmpty($tags)) {
     Write-Host "Pushing tags to remote..."
     git -c http.extraheader="AUTHORIZATION: bearer $env:SYSTEM_ACCESSTOKEN" push origin --tags
