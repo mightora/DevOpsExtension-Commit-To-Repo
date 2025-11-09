@@ -107,7 +107,9 @@ if (![string]::IsNullOrEmpty($targetFolder) -and $createOrphanBranch) {
     Write-Host "Creating ORPHAN branch '$branchName' - will contain ONLY specified folders with no history"
     
     # Create an orphan branch (starts with empty history)
-    git checkout --orphan $branchName
+    # Use -q (quiet) to suppress informational messages that some CI systems
+    # treat as stderr (which can be interpreted as errors).
+    git checkout -q --orphan $branchName
     
     # Remove all files from staging area (start with a clean slate)
     Write-Host "Clearing staging area..."
@@ -123,12 +125,13 @@ if (![string]::IsNullOrEmpty($targetFolder) -and $createOrphanBranch) {
     Write-Host "Checking out branch '$branchName' (simple checkout)"
     
     # Try to create and checkout the branch (suppress output to avoid Azure DevOps error detection)
-    git checkout -b $branchName 2>&1 | Out-Null
-    
+    # Use -q to prevent Git from writing the success message to stderr
+    git checkout -q -b $branchName 2>&1 | Out-Null
+
     # If branch already exists, just switch to it
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Branch already exists, switching to it..."
-        git checkout $branchName 2>&1 | Out-Null
+        git checkout -q $branchName 2>&1 | Out-Null
     } else {
         Write-Host "Successfully created and checked out branch '$branchName'"
     }
@@ -161,16 +164,16 @@ if (![string]::IsNullOrEmpty($targetFolder) -and $createOrphanBranch) {
         if ($localBranchExists) {
             # Branch exists locally, just switch to it
             Write-Host "  → Route: Switching to existing local branch '$branchName'"
-            git checkout $branchName 2>&1 | Out-Null
+            git checkout -q $branchName 2>&1 | Out-Null
         } elseif ($remoteBranchExists) {
             # Branch exists on remote but not locally (common in Azure DevOps pipelines)
             # Create a local tracking branch from the remote branch
             Write-Host "  → Route: Branch exists on remote, creating local tracking branch '$branchName'"
-            git checkout -b $branchName origin/$branchName 2>&1 | Out-Null
+            git checkout -q -b $branchName origin/$branchName 2>&1 | Out-Null
         } else {
             # Branch doesn't exist anywhere, create it from current HEAD
             Write-Host "  → Route: Creating new branch '$branchName' (doesn't exist locally or remotely)"
-            git checkout -b $branchName 2>&1 | Out-Null
+            git checkout -q -b $branchName 2>&1 | Out-Null
         }
     }
 }
