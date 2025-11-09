@@ -91,7 +91,13 @@ if (![string]::IsNullOrEmpty($targetFolder) -and $createOrphanBranch) {
     Write-Host "Clearing staging area..."
     git rm -rf --cached . 2>&1 | Out-Null
     
+} elseif ([string]::IsNullOrEmpty($targetFolder) -and ($pushStrategy -eq "normal" -or [string]::IsNullOrEmpty($pushStrategy))) {
+    # Simple path for normal operations - just like the original script
+    Write-Host "Checking out branch '$branchName'"
+    git checkout -b $branchName 2>&1 | Out-Null
+    
 } else {
+    # Advanced path for force push, deleteAndRecreate, or when using targetFolder
     Write-Host "Creating/checking out branch '$branchName'"
     
     # Get current branch (might be HEAD if detached)
@@ -101,12 +107,13 @@ if (![string]::IsNullOrEmpty($targetFolder) -and $createOrphanBranch) {
     if ($currentBranch -eq $branchName) {
         Write-Host "Already on branch '$branchName'"
     } else {
-        # Check if branch exists locally
-        $branchExists = git rev-parse --verify $branchName 2>&1
+        # Check if branch exists locally (suppress error output)
+        git rev-parse --verify $branchName 2>&1 | Out-Null
         $localBranchExists = ($LASTEXITCODE -eq 0)
         
-        # Check if branch exists on remote
-        $remoteBranchExists = git ls-remote --heads origin $branchName 2>&1
+        # Check if branch exists on remote (check if output is not empty)
+        $remoteBranchCheck = git ls-remote --heads origin $branchName 2>&1
+        $remoteBranchExists = ![string]::IsNullOrEmpty($remoteBranchCheck)
         
         if ($localBranchExists) {
             # Branch exists locally, just switch to it
