@@ -122,13 +122,15 @@ if (![string]::IsNullOrEmpty($targetFolder) -and $createOrphanBranch) {
     Write-Host "========================================="
     Write-Host "Checking out branch '$branchName' (simple checkout)"
     
-    # Try to create and checkout the branch
-    $checkoutResult = git checkout -b $branchName 2>&1
+    # Try to create and checkout the branch (suppress output to avoid Azure DevOps error detection)
+    git checkout -b $branchName 2>&1 | Out-Null
     
     # If branch already exists, just switch to it
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Branch already exists, switching to it..."
         git checkout $branchName 2>&1 | Out-Null
+    } else {
+        Write-Host "Successfully created and checked out branch '$branchName'"
     }
     
 } else {
