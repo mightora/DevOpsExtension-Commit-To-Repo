@@ -43,6 +43,7 @@ Write-Host "==========================================================="
 Write-Host "Please tell us what you think of this task: https://go.iantweedie.biz/mightoria-testimonials"
 Write-Host "==========================================================="
 
+Write-Output "STEP 1: Get inputs from the Azure DevOps task configuration"
 # ============================================================
 # STEP 1: Get inputs from the Azure DevOps task configuration
 # ============================================================
@@ -62,6 +63,7 @@ cd $env:Build_SourcesDirectory
 
 Write-Output "Working Directory Updated to: $(Get-Location)"
 
+Write-Output "STEP 2: Configure Git user identity from pipeline variables"
 # ============================================================
 # STEP 2: Configure Git user identity from pipeline variables
 # ============================================================
@@ -87,6 +89,7 @@ git config user.email "$userEmail"
 Write-Host "Configuring Git user.name with: $userName"
 git config user.name "$userName"
 
+Write-Output "STEP 3: Checkout or create the target branch"
 # ============================================================
 # STEP 3: Checkout or create the target branch
 # ============================================================
@@ -118,7 +121,15 @@ if (![string]::IsNullOrEmpty($targetFolder) -and $createOrphanBranch) {
     Write-Host "BRANCH STRATEGY: SIMPLE MODE"
     Write-Host "========================================="
     Write-Host "Checking out branch '$branchName' (simple checkout)"
-    git checkout -b $branchName 2>&1 | Out-Null
+    
+    # Try to create and checkout the branch
+    $checkoutResult = git checkout -b $branchName 2>&1
+    
+    # If branch already exists, just switch to it
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Branch already exists, switching to it..."
+        git checkout $branchName 2>&1 | Out-Null
+    }
     
 } else {
     # === ADVANCED MODE ===
@@ -162,6 +173,7 @@ if (![string]::IsNullOrEmpty($targetFolder) -and $createOrphanBranch) {
     }
 }
 
+Write-Output "STEP 4: Stage changes for commit"
 # ============================================================
 # STEP 4: Stage changes for commit
 # ============================================================
@@ -251,6 +263,7 @@ if (![string]::IsNullOrEmpty($targetFolder)) {
     git add --all
 }
 
+Write-Output "STEP 5: Create the Git commit"
 # ============================================================
 # STEP 5: Create the Git commit
 # ============================================================
@@ -270,6 +283,7 @@ if ($LASTEXITCODE -ne 0) {
     }
 }
 
+Write-Output "STEP 6: Apply Git tags (optional)"
 # ============================================================
 # STEP 6: Apply Git tags (optional)
 # ============================================================
@@ -282,7 +296,7 @@ if (![string]::IsNullOrEmpty($tags)) {
     }
 }
 
-Write-Output "Push code to repo"
+Write-Output "STEP 7: Push changes to remote repository"
 
 # ============================================================
 # STEP 7: Push changes to remote repository
