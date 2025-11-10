@@ -43,10 +43,16 @@ Write-Host "==========================================================="
 Write-Host "Please tell us what you think of this task: https://go.iantweedie.biz/mightoria-testimonials"
 Write-Host "==========================================================="
 
-Write-Output "STEP 1: Get inputs from the Azure DevOps task configuration"
 # ============================================================
 # STEP 1: Get inputs from the Azure DevOps task configuration
 # ============================================================
+Write-Host ""
+Write-Host ""
+Write-Host "========================================="
+Write-Output "STEP 1: Get inputs from the Azure DevOps task configuration"
+Write-Host "========================================="
+Write-Host ""
+
 $commitMsg = Get-VstsInput -Name 'commitMsg'              # The commit message text
 $branchName = Get-VstsInput -Name 'branchName'            # Target branch name
 $tags = Get-VstsInput -Name 'tags'                        # Optional: comma-separated Git tags
@@ -68,6 +74,13 @@ Write-Output "STEP 2: Configure Git user identity from pipeline variables"
 # STEP 2: Configure Git user identity from pipeline variables
 # ============================================================
 # Pull user information from Azure DevOps pipeline variables
+Write-Host ""
+Write-Host ""
+Write-Host "========================================="
+Write-Output "STEP 2: Configure Git user identity from pipeline variables"
+Write-Host "========================================="
+Write-Host ""
+
 $userEmail = $env:BUILD_REQUESTEDFOREMAIL  # Email of user who triggered the pipeline
 $userName = $env:BUILD_REQUESTEDFOR        # Display name of user who triggered the pipeline
 $accessToken = $env:SYSTEM_ACCESSTOKEN     # Pipeline authentication token for Git operations
@@ -89,7 +102,7 @@ git config user.email "$userEmail"
 Write-Host "Configuring Git user.name with: $userName"
 git config user.name "$userName"
 
-Write-Output "STEP 3: Checkout or create the target branch"
+
 # ============================================================
 # STEP 3: Checkout or create the target branch
 # ============================================================
@@ -97,13 +110,17 @@ Write-Output "STEP 3: Checkout or create the target branch"
 # 1. Orphan branch (new branch with no history) - for publishing specific folders only
 # 2. Simple checkout (normal operations) - straightforward branch creation
 # 3. Advanced checkout (force/delete strategies or target folders) - handles complex scenarios
+Write-Host ""
+Write-Host ""
+Write-Host "========================================="
+Write-Output "STEP 3: Checkout or create the target branch"
+Write-Host "========================================="
+Write-Host ""
 
 if (![string]::IsNullOrEmpty($targetFolder) -and $createOrphanBranch) {
     # === ORPHAN BRANCH MODE ===
     # Creates a branch with no parent commits - useful for gh-pages or clean documentation branches
-    Write-Host "========================================="
     Write-Host "BRANCH STRATEGY: ORPHAN BRANCH MODE"
-    Write-Host "========================================="
     Write-Host "Creating ORPHAN branch '$branchName' - will contain ONLY specified folders with no history"
     
     # Create an orphan branch (starts with empty history)
@@ -119,9 +136,7 @@ if (![string]::IsNullOrEmpty($targetFolder) -and $createOrphanBranch) {
     # === SIMPLE MODE (NORMAL OPERATIONS) ===
     # Most common use case: just checkout/create a branch and commit all changes
     # This matches the behavior of the original simple script
-    Write-Host "========================================="
     Write-Host "BRANCH STRATEGY: SIMPLE MODE"
-    Write-Host "========================================="
     Write-Host "Checking out branch '$branchName' (simple checkout)"
     
     # Try to create and checkout the branch (suppress output to avoid Azure DevOps error detection)
@@ -140,9 +155,7 @@ if (![string]::IsNullOrEmpty($targetFolder) -and $createOrphanBranch) {
     # === ADVANCED MODE ===
     # Used when force pushing, deleting/recreating branches, or working with specific target folders
     # Requires careful branch management to avoid conflicts
-    Write-Host "========================================="
     Write-Host "BRANCH STRATEGY: ADVANCED MODE"
-    Write-Host "========================================="
     Write-Host "Creating/checking out branch '$branchName' (advanced mode with branch detection)"
     
     # Get current branch name (returns "HEAD" if in detached HEAD state, common in pipelines)
@@ -178,19 +191,23 @@ if (![string]::IsNullOrEmpty($targetFolder) -and $createOrphanBranch) {
     }
 }
 
-Write-Output "STEP 4: Stage changes for commit"
+
 # ============================================================
 # STEP 4: Stage changes for commit
 # ============================================================
 # Two modes: stage specific folders only, or stage all changes
+Write-Host ""
+Write-Host ""
+Write-Host "========================================="
+Write-Output "STEP 4: Stage changes for commit"
+Write-Host "========================================="
+Write-Host ""
 
 if (![string]::IsNullOrEmpty($targetFolder)) {
     # === FOLDER-SPECIFIC MODE ===
     # Only commit changes from specified folder(s) - useful for monorepos or selective deployments
-    Write-Host ""
-    Write-Host "========================================="
     Write-Host "STAGING STRATEGY: TARGET FOLDERS"
-    Write-Host "========================================="
+
     
     if ($createOrphanBranch) {
         Write-Host "Adding ONLY specified folder(s) to orphan branch"
@@ -260,19 +277,22 @@ if (![string]::IsNullOrEmpty($targetFolder)) {
 } else {
     # === STAGE ALL MODE ===
     # Most common use case: commit all changes in the repository
-    Write-Host ""
-    Write-Host "========================================="
     Write-Host "STAGING STRATEGY: ALL CHANGES"
-    Write-Host "========================================="
     Write-Host "Staging all changes in repository"
     git add --all
 }
 
-Write-Output "STEP 5: Create the Git commit"
 # ============================================================
 # STEP 5: Create the Git commit
 # ============================================================
 # Commit staged changes with the provided commit message
+Write-Host ""
+Write-Host ""
+Write-Host "========================================="
+Write-Output "STEP 5: Create the Git commit"
+Write-Host "========================================="
+Write-Host ""
+
 $commitResult = git commit -m "$commitMsg" 2>&1
 
 # Check if commit was successful
@@ -288,11 +308,17 @@ if ($LASTEXITCODE -ne 0) {
     }
 }
 
-Write-Output "STEP 6: Apply Git tags (optional)"
 # ============================================================
 # STEP 6: Apply Git tags (optional)
 # ============================================================
 # Tags are useful for marking releases or important commits
+Write-Host ""
+Write-Host ""
+Write-Host "========================================="
+Write-Output "STEP 6: Apply Git tags (optional)"
+Write-Host "========================================="
+Write-Host ""
+
 if (![string]::IsNullOrEmpty($tags)) {
     # Support multiple tags separated by commas (e.g., "v1.0.0,release")
     $tagsArray = $tags -split ","
@@ -301,7 +327,6 @@ if (![string]::IsNullOrEmpty($tags)) {
     }
 }
 
-Write-Output "STEP 7: Push changes to remote repository"
 
 # ============================================================
 # STEP 7: Push changes to remote repository
@@ -310,11 +335,13 @@ Write-Output "STEP 7: Push changes to remote repository"
 # - normal: Standard push (fails if remote has changes you don't have)
 # - force: Overwrites remote branch completely (⚠️ DESTRUCTIVE)
 # - deleteAndRecreate: Deletes remote branch first, then pushes (useful for clean history)
-
+Write-Host ""
 Write-Host ""
 Write-Host "========================================="
-Write-Host "PUSH STRATEGY: $($pushStrategy.ToUpper())"
+Write-Output "STEP 7: Push changes to remote repository"
 Write-Host "========================================="
+Write-Host ""
+Write-Host "PUSH STRATEGY: $($pushStrategy.ToUpper())"
 
 switch ($pushStrategy) {
     "force" {
@@ -350,6 +377,12 @@ if ($LASTEXITCODE -ne 0) {
 # STEP 8: Push Git tags (optional)
 # ============================================================
 # Tags need to be pushed separately from commits
+Write-Host ""
+Write-Host ""
+Write-Host "========================================="
+Write-Output "STEP 8: Push Git tags (optional)"
+Write-Host "========================================="
+Write-Host ""
 if (![string]::IsNullOrEmpty($tags)) {
     Write-Host "Pushing tags to remote..."
     git -c http.extraheader="AUTHORIZATION: bearer $env:SYSTEM_ACCESSTOKEN" push origin --tags
