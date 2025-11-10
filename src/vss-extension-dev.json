@@ -1,8 +1,8 @@
 {
     "manifestVersion": 1,
-    "id": "mightora-commit-to-repo-extension",
-    "name": "DEV 2.0.30 - Commit to Repo Extension",
-    "version": "2.0.30",
+    "id": "dev-mightora-commit-to-repo-extension",
+    "name": "DEV 2.0.31 - Commit to Repo Extension",
+    "version": "2.0.31",
     "publisher": "mightoraio",
     "targets": [
         {
@@ -88,7 +88,7 @@
     "files": [
         {
             "path": "tasks/commitToRepo",
-            "packagePath": "commitToRepo"
+            "packagePath": "tasks/commitToRepo"
         }
     ],
     "contributions": [
@@ -99,7 +99,7 @@
                 "ms.vss-distributed-task.tasks"
             ],
             "properties": {
-                "name": "commitToRepo"
+                "name": "tasks/commitToRepo"
             }
         }
     ]
